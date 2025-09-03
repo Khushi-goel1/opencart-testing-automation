@@ -7,6 +7,8 @@ from datetime import datetime
 import os
 import base64
 
+os.makedirs("screenshots", exist_ok=True)
+
 @pytest.fixture(scope="function")
 def browser():
     options = Options()
@@ -31,17 +33,24 @@ def pytest_runtest_makereport(item, call):
             test_name = item.name
             screenshot_path = f"screenshots/{test_name}_{timestamp}.png"
 
-            driver.save_screenshot(screenshot_path)
-            print(f"\nScreenshot saved: {screenshot_path}")
+            try:
+                driver.save_screenshot(screenshot_path)
+                print(f"\nScreenshot saved: {screenshot_path}")
+            except Exception as e:
+                print(f"\nFailed to save screenshot: {e}")
+                screenshot_path = None
 
             # Attach screenshot to pytest-html report
             pytest_html = item.config.pluginmanager.getplugin("html")
-            if pytest_html is not None:
-                with open(screenshot_path, "rb") as f:
-                    img_base64 = base64.b64encode(f.read()).decode("utf-8")
-                extra = getattr(rep, "extra", [])
-                extra.append(pytest_html.extras.image(img_base64, mime_type="image/png"))
-                rep.extra = extra
+            if pytest_html is not None and screenshot_path and os.path.exists(screenshot_path):
+                try:
+                    with open(screenshot_path, "rb") as f:
+                        img_base64 = base64.b64encode(f.read()).decode("utf-8")
+                    extra = getattr(rep, "extra", [])
+                    extra.append(pytest_html.extras.image(img_base64, mime_type="image/png"))
+                    rep.extra = extra
+                except Exception as e:
+                    print(f"\nFailed to attach screenshot to report: {e}")
 
 def pytest_html_results_table_header(cells):
     cells.insert(2, '<th>Extras</th>')
