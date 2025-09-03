@@ -10,13 +10,22 @@ class InventoryPage(BasePage):
     CART_BADGE = (By.CSS_SELECTOR, "a.shopping_cart_link span.shopping_cart_badge")
 
     def add_backpack_to_cart(self):
-        WebDriverWait(self.browser, 20).until(
-            EC.element_to_be_clickable(self.BACKPACK_ADD_BUTTON)
-        ).click()
+        try:
+            add_btn =WebDriverWait(self.browser, 40).until(
+                EC.element_to_be_clickable(self.BACKPACK_ADD_BUTTON)
+            )
+            add_btn.click()
+        except TimeoutException:
+            self.browser.save_screenshot("debug_add_btn_timeout.png")
+            raise
 
-        WebDriverWait(self.browser, 20).until(
-            EC.presence_of_element_located(self.BACKPACK_REMOVE_BUTTON)
-        )
+        try:
+            WebDriverWait(self.browser, 20).until(
+                EC.presence_of_element_located(self.BACKPACK_REMOVE_BUTTON)
+            )
+        except TimeoutException:
+            self.browser.save_screenshot("debug_remove_btn_timeout.png")
+            raise
 
     def get_cart_count(self):
         try:
